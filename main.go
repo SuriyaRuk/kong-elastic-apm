@@ -287,7 +287,7 @@ func (conf Config) Log(kong *pdk.PDK) {
 		Start: time.Unix(0, msg.StartedAt*int64(time.Millisecond)),
 	}
 	spanOptions := apm.SpanOptions{
-		Start: time.Unix(0, msg.StartedAt*int64(time.Millisecond)+int64(msg.Latencies.Kong*int(time.Millisecond)/2)),
+		Start: time.Unix(0, msg.StartedAt*int64(time.Millisecond)+int64(msg.Latencies.Kong*int(time.Millisecond))),
 	}
 	// check if there is an existing trace parent
 	if traceParentHeader, ok := msg.Request.Headers[traceParent]; ok {
@@ -338,7 +338,13 @@ func (conf Config) Log(kong *pdk.PDK) {
 		msg.Request.Method, // assume same as transaction
 		serviceURL,
 	), "external", spanOptions)
-	span.Duration = time.Duration(msg.Latencies.Request-msg.Latencies.Kong) * time.Millisecond
+	var  upTomillisec int
+     	if msg.Latencies.Proxy == -1 {
+        	upTomillisec = 0
+     	} else {
+         	upTomillisec = 1
+   	}	
+	span.Duration = time.Duration(msg.Latencies.Request-msg.Latencies.Kong+upTomillisec) * time.Millisecond
 	defer span.End()
 	_ = kong.Log.Debug(fmt.Sprintf("Started span: %+v", span.TraceContext()))
 	// enrich transaction
